@@ -1,0 +1,5 @@
+django
+gunicorn
+uvicorn
+uvicorn-worker
+django-cors-headers

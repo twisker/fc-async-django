@@ -1,0 +1,61 @@
+edition: 3.0.0
+name: fc-async-django-app
+access: "default"
+
+vars: # 全局变量
+  region: "cn-hangzhou"
+
+resources:
+  fc_async_service_framework:
+    component: fc3
+    props: # 组件的属性值
+      region: ${vars.region}
+      code: './'
+      runtime: custom.debian10
+      functionName: "fc_async_django"
+      description: 'a demo service for FC Async Django App'
+      timeout: 60
+      customRuntimeConfig:
+        command:
+          - '/var/fc/lang/python3.10/bin/python3'
+        args:
+          - '-m'
+          - 'gunicorn'
+          - '-k'
+          - 'uvicorn_worker.UvicornWorker'
+          - '--bind'
+          - '0.0.0.0:80'
+          - 'website.asgi:application'
+        port: 80
+      environmentVariables:
+        PYTHONPATH: /code/python
+        PATH: /code/python/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/code:/code/bin:/opt:/opt/bin
+      triggers:
+        - triggerName: httpTrigger
+          triggerType: http
+          triggerConfig:
+            authType: anonymous
+            disableURLInternet: false
+            methods:
+              - GET
+              - POST
+              - DELETE
+              - PUT
+              - OPTIONS
+
+  fc_async_service_domain:
+    component: fc3-domain
+    props:
+      region: ${vars.region}
+      domainName: auto
+      protocol: HTTP
+      routeConfig:
+        routes:
+          - functionName: fc_async_django
+            methods:
+              - GET
+              - POST
+              - DELETE
+              - PUT
+              - OPTIONS
+            path: '/*'
